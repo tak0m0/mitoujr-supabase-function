@@ -1,0 +1,43 @@
+name: Deploy to Supabase
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy Edge Functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+        run: |
+          supabase link --project-ref $SUPABASE_PROJECT_ID
+          supabase functions deploy --no-verify-jwt
+
+      - name: Deploy individual functions with verification
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+        run: |
+          echo "Deploying today-channels-summary..."
+          supabase functions deploy today-channels-summary --no-verify-jwt
+          
+          echo "Deploying reminder-cron..."
+          supabase functions deploy reminder-cron
+          
+          echo "Deploying slash-reminder-mentors..."
+          supabase functions deploy slash-reminder-mentors
+          
+          echo "All functions deployed successfully!"
